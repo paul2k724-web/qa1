@@ -182,9 +182,14 @@ function updateCartSummary() {
     const tax = subtotal * 0.1; // 10% tax
     const total = subtotal + tax;
 
-    document.querySelector('[data-testid="cart-subtotal"]').textContent = `$${subtotal.toFixed(2)}`;
-    document.querySelector('[data-testid="cart-tax"]').textContent = `$${tax.toFixed(2)}`;
-    document.querySelector('[data-testid="cart-total"]').textContent = `$${total.toFixed(2)}`;
+    const formatter = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+    });
+
+    document.querySelector('[data-testid="cart-subtotal"]').textContent = formatter.format(subtotal);
+    document.querySelector('[data-testid="cart-tax"]').textContent = formatter.format(tax);
+    document.querySelector('[data-testid="cart-total"]').textContent = formatter.format(total);
 }
 
 // Show checkout section
