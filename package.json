@@ -1,0 +1,26 @@
+{
+    "name": "detp-demo",
+    "version": "1.0.0",
+    "description": "DETP Minimal Working Demo - E-commerce Testing",
+    "scripts": {
+        "test": "playwright test",
+        "test:ui": "playwright test --ui",
+        "test:headed": "playwright test --headed",
+        "test:debug": "playwright test --debug",
+        "report": "playwright show-report",
+        "serve": "npx serve demo-app -p 3000"
+    },
+    "keywords": [
+        "qa",
+        "automation",
+        "playwright",
+        "testing"
+    ],
+    "author": "DETP Demo",
+    "license": "MIT",
+    "devDependencies": {
+        "@playwright/test": "^1.40.0",
+        "@types/node": "^20.10.0",
+        "serve": "^14.2.1"
+    }
+}

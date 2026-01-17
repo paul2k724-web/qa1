@@ -1,0 +1,212 @@
+name: API Test Suite
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'packages/api-tests/**'
+      - '.github/workflows/api-tests.yml'
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  API_BASE_URL: https://staging-api.ecommerce.example.com
+  JAVA_VERSION: '17'
+  MAVEN_OPTS: '-Xmx1024m'
+
+jobs:
+  api-tests:
+    name: API Tests - ${{ matrix.suite }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [cart, payment, inventory, search]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: 'maven'
+      
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      
+      - name: Run ${{ matrix.suite }} API tests
+        run: |
+          cd packages/api-tests
+          mvn clean test \
+            -Dtest=${{ matrix.suite }}/**/*Test \
+            -Dparallel=classes \
+            -DthreadCount=4 \
+            -Dapi.base.url=${{ env.API_BASE_URL }} \
+            -DfailIfNoTests=true
+        env:
+          TEST_USER_API_KEY: ${{ secrets.TEST_USER_API_KEY }}
+      
+      - name: Publish test results
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: API Tests - ${{ matrix.suite }}
+          path: packages/api-tests/target/surefire-reports/*.xml
+          reporter: java-junit
+          fail-on-error: false
+      
+      - name: Generate Allure report
+        if: always()
+        run: |
+          cd packages/api-tests
+          mvn allure:report
+      
+      - name: Upload Allure results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-${{ matrix.suite }}
+          path: packages/api-tests/target/allure-results/
+          retention-days: 7
+      
+      - name: Upload test artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-failure-logs-${{ matrix.suite }}
+          path: |
+            packages/api-tests/target/surefire-reports/
+            packages/api-tests/logs/
+          retention-days: 14
+      
+      - name: Collect performance metrics
+        if: always()
+        run: |
+          # Extract test duration from surefire reports
+          DURATION=$(grep -oP 'time="\K[0-9.]+' packages/api-tests/target/surefire-reports/*.xml | \
+                     awk '{sum+=$1} END {print sum}')
+          echo "test_suite_duration_seconds{suite=\"${{ matrix.suite }}\"} $DURATION" > metrics.txt
+          
+          # Count test results
+          PASSED=$(grep -c 'status="passed"' packages/api-tests/target/surefire-reports/*.xml || echo 0)
+          FAILED=$(grep -c 'status="failed"' packages/api-tests/target/surefire-reports/*.xml || echo 0)
+          
+          echo "test_suite_passed_total{suite=\"${{ matrix.suite }}\"} $PASSED" >> metrics.txt
+          echo "test_suite_failed_total{suite=\"${{ matrix.suite }}\"} $FAILED" >> metrics.txt
+      
+      - name: Push metrics to Prometheus
+        if: always()
+        run: |
+          if [ -f metrics.txt ]; then
+            curl -X POST \
+              -H 'Content-Type: text/plain' \
+              --data-binary @metrics.txt \
+              ${{ secrets.PROMETHEUS_PUSHGATEWAY_URL }}/metrics/job/api-tests/instance/${{ matrix.suite }} || true
+          fi
+
+  merge-reports:
+    name: Merge Allure Reports
+    needs: api-tests
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Download all Allure results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: allure-results-*
+          path: allure-results
+      
+      - name: Merge Allure results
+        run: |
+          mkdir -p allure-report
+          # Flatten artifact directories
+          find allure-results -type f -name '*.json' -exec cp {} allure-report/ \;
+      
+      - name: Generate unified Allure report
+        uses: simple-elf/allure-report-action@v1.7
+        with:
+          allure_results: allure-report
+          allure_history: allure-history
+          keep_reports: 10
+      
+      - name: Publish Allure report
+        uses: peaceiris/actions-gh-pages@v3
+        if: github.ref == 'refs/heads/main'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./allure-history
+          destination_dir: reports/api-tests
+      
+      - name: Comment PR with report link
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '📊 **API Test Report**: [View Allure Report](https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/reports/api-tests)'
+            })
+
+  quality-gate:
+    name: Quality Gate Check
+    needs: api-tests
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Download test results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: allure-results-*
+          path: test-results
+      
+      - name: Calculate flake rate
+        id: flake_check
+        run: |
+          # Parse test results to detect flaky tests
+          # (Simplified - production would analyze historical data)
+          TOTAL_TESTS=$(find test-results -name '*.json' | wc -l)
+          echo "total_tests=$TOTAL_TESTS" >> $GITHUB_OUTPUT
+          
+          # Check for known flaky patterns in test names
+          FLAKY_TESTS=$(grep -r "retries" test-results | wc -l || echo 0)
+          FLAKE_RATE=$(echo "scale=2; $FLAKY_TESTS / $TOTAL_TESTS * 100" | bc -l || echo 0)
+          
+          echo "flake_rate=$FLAKE_RATE" >> $GITHUB_OUTPUT
+          
+          # Fail if flake rate exceeds 5%
+          if (( $(echo "$FLAKE_RATE > 5.0" | bc -l) )); then
+            echo "::error::Flake rate ($FLAKE_RATE%) exceeds 5% threshold"
+            exit 1
+          fi
+      
+      - name: Update commit status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const flakeRate = '${{ steps.flake_check.outputs.flake_rate }}';
+            github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: 'success',
+              context: 'API Test Quality',
+              description: `Flake rate: ${flakeRate}% (target: <5%)`
+            })

@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Cart Response Schema",
+  "description": "Expected response structure for Cart API endpoints",
+  "type": "object",
+  "required": ["cartId", "userId", "items", "totalPrice", "itemCount", "createdAt"],
+  "properties": {
+    "cartId": {
+      "type": "string",
+      "pattern": "^cart_[a-f0-9]{24}$",
+      "description": "Unique cart identifier"
+    },
+    "userId": {
+      "type": "string",
+      "pattern": "^user_[a-f0-9]{24}$",
+      "description": "User who owns this cart"
+    },
+    "items": {
+      "type": "array",
+      "description": "List of cart items",
+      "items": {
+        "type": "object",
+        "required": ["sku", "name", "quantity", "price", "subtotal"],
+        "properties": {
+          "sku": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 50,
+            "description": "Product SKU"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Product name"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 99,
+            "description": "Quantity of this item"
+          },
+          "price": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Unit price"
+          },
+          "subtotal": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Line item subtotal (price * quantity)"
+          },
+          "imageUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Product image URL"
+          }
+        }
+      }
+    },
+    "totalPrice": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Total cart value"
+    },
+    "itemCount": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total number of items (sum of all quantities)"
+    },
+    "tax": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Calculated tax amount (optional, depends on address)"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Cart creation timestamp (ISO 8601)"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last modification timestamp (ISO 8601)"
+    },
+    "expiresAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Cart expiration timestamp (optional)"
+    }
+  },
+  "additionalProperties": false
+}

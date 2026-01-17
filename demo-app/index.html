@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechStore - Premium Electronics</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>🛒 TechStore</h1>
+            <div class="cart-icon">
+                <span>Cart</span>
+                <span class="cart-count" data-testid="cart-count">0</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <h2>Premium Electronics at Your Fingertips</h2>
+            <p>Fast shipping • 30-day returns • 24/7 support</p>
+        </section>
+
+        <section class="products" id="products">
+            <h2>Featured Products</h2>
+            <div class="product-grid">
+                <!-- Product 1 -->
+                <div class="product-card" data-testid="product-laptop">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200'%3E%3Crect fill='%23667eea' width='300' height='200'/%3E%3Ctext x='50%25' y='50%25' font-size='20' fill='white' text-anchor='middle' dy='.3em'%3ELaptop%3C/text%3E%3C/svg%3E" alt="Gaming Laptop Pro">
+                    <h3>Gaming Laptop Pro</h3>
+                    <p class="description">Intel i9, 32GB RAM, RTX 4080</p>
+                    <p class="price" data-testid="product-laptop-price">$1,299.99</p>
+                    <button class="add-to-cart" data-sku="LAPTOP-001" data-testid="add-laptop">Add to Cart</button>
+                </div>
+
+                <!-- Product 2 -->
+                <div class="product-card" data-testid="product-headphones">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200'%3E%3Crect fill='%23764ba2' width='300' height='200'/%3E%3Ctext x='50%25' y='50%25' font-size='20' fill='white' text-anchor='middle' dy='.3em'%3EHeadphones%3C/text%3E%3C/svg%3E" alt="Wireless Headphones">
+                    <h3>Wireless Headphones Pro</h3>
+                    <p class="description">Noise cancelling, 40hr battery</p>
+                    <p class="price" data-testid="product-headphones-price">$299.99</p>
+                    <button class="add-to-cart" data-sku="HEADPHONES-001" data-testid="add-headphones">Add to Cart</button>
+                </div>
+
+                <!-- Product 3 -->
+                <div class="product-card" data-testid="product-keyboard">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200'%3E%3Crect fill='%23f093fb' width='300' height='200'/%3E%3Ctext x='50%25' y='50%25' font-size='20' fill='white' text-anchor='middle' dy='.3em'%3EKeyboard%3C/text%3E%3C/svg%3E" alt="Mechanical Keyboard">
+                    <h3>Mechanical Keyboard RGB</h3>
+                    <p class="description">Cherry MX switches, RGB lighting</p>
+                    <p class="price" data-testid="product-keyboard-price">$149.99</p>
+                    <button class="add-to-cart" data-sku="KEYBOARD-001" data-testid="add-keyboard">Add to Cart</button>
+                </div>
+
+                <!-- Product 4 -->
+                <div class="product-card" data-testid="product-mouse">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200'%3E%3Crect fill='%234facfe' width='300' height='200'/%3E%3Ctext x='50%25' y='50%25' font-size='20' fill='white' text-anchor='middle' dy='.3em'%3EMouse%3C/text%3E%3C/svg%3E" alt="Gaming Mouse">
+                    <h3>Gaming Mouse Ultra</h3>
+                    <p class="description">20,000 DPI, wireless charging</p>
+                    <p class="price" data-testid="product-mouse-price">$79.99</p>
+                    <button class="add-to-cart" data-sku="MOUSE-001" data-testid="add-mouse">Add to Cart</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="cart-section" id="cart" style="display: none;">
+            <h2>Shopping Cart</h2>
+            <div class="cart-items" data-testid="cart-items">
+                <!-- Cart items will be inserted here -->
+            </div>
+            <div class="cart-summary">
+                <h3>Order Summary</h3>
+                <p>Subtotal: <span data-testid="cart-subtotal">$0.00</span></p>
+                <p>Tax (10%): <span data-testid="cart-tax">$0.00</span></p>
+                <p class="total">Total: <span data-testid="cart-total">$0.00</span></p>
+                <button id="checkout-btn" data-testid="checkout-button" class="checkout-btn">Proceed to Checkout</button>
+                <button id="continue-shopping" class="secondary-btn">Continue Shopping</button>
+            </div>
+        </section>
+
+        <section class="checkout-section" id="checkout" style="display: none;">
+            <h2>Checkout</h2>
+            <form id="checkout-form" data-testid="checkout-form">
+                <div class="form-section">
+                    <h3>Payment Information</h3>
+                    <div class="form-group">
+                        <label for="card-number">Card Number</label>
+                        <input type="text" id="card-number" data-testid="card-number" placeholder="4242 4242 4242 4242" required>
+                        <span class="error" id="card-error"></span>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="expiry">Expiry Date</label>
+                            <input type="text" id="expiry" data-testid="card-expiry" placeholder="MM/YY" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="cvv">CVV</label>
+                            <input type="text" id="cvv" data-testid="card-cvv" placeholder="123" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="card-name">Cardholder Name</label>
+                        <input type="text" id="card-name" data-testid="card-name" placeholder="John Doe" required>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Billing Address</h3>
+                    <div class="form-group">
+                        <label for="address">Street Address</label>
+                        <input type="text" id="address" data-testid="billing-address" placeholder="123 Main St" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="city">City</label>
+                            <input type="text" id="city" data-testid="billing-city" placeholder="San Francisco" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="state">State</label>
+                            <input type="text" id="state" data-testid="billing-state" placeholder="CA" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="zip">ZIP Code</label>
+                            <input type="text" id="zip" data-testid="billing-zip" placeholder="94105" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="checkout-summary">
+                    <h3>Order Total: <span data-testid="checkout-total">$0.00</span></h3>
+                    <button type="submit" class="submit-btn" data-testid="submit-order">Complete Purchase</button>
+                    <button type="button" id="back-to-cart" class="secondary-btn">Back to Cart</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="success-section" id="success" style="display: none;">
+            <div class="success-message" data-testid="success-message">
+                <h2>✅ Order Successful!</h2>
+                <p>Thank you for your purchase!</p>
+                <p>Order Number: <strong data-testid="order-number">ORD-12345678</strong></p>
+                <p>You will receive a confirmation email shortly.</p>
+                <button id="new-order" class="primary-btn">Shop More</button>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 TechStore. All rights reserved. | Demo Application for QA Testing</p>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
